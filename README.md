@@ -10,7 +10,7 @@
 ```
 exam-drop/
 ├─ src/
-│  ├─ build.mjs      编译 dist：加密每个学生的整套试卷
+│  ├─ build.mjs      编译 docs：加密每个学生的整套试卷
 │  ├─ claim.html     领取页（页面骨架 + 样式）
 │  ├─ claim.js       领取页逻辑：输入 → 解密 → 渲染
 │  ├─ shared.mjs     加解密（浏览器与 Node 共用）
@@ -27,7 +27,7 @@ exam-drop/
 │  └─ serve.mjs      本地预览服务器
 ├─ roster.csv        名单（学号,姓名,区队,成绩）
 ├─ 试卷_摆正/         处理好的扫描件（每个学生一个文件夹）
-└─ dist/             最终要部署的东西
+└─ docs/             最终要部署的东西（GitHub Pages 发布目录）
 ```
 
 ## 三条命令
@@ -40,13 +40,13 @@ python tools/xlsx_to_csv.py "C:\Users\enolo\Desktop\数分\2026级中科大交�
 python tools/prepare_pages.py --source "C:\Users\enolo\Desktop\期中考试" --out 试卷_摆正 --max-width 2600 --quality 82
 
 # 2) 编译领取站
-node src/build.mjs --source 试卷_摆正 --roster roster.csv --out dist `
+node src/build.mjs --source 试卷_摆正 --roster roster.csv --out docs `
   --title "创新班期中试卷领取" --subtitle "2026 级中科大交流生 · 数学分析" `
   --second name --order name `
   --note "每张照片是一整张对开卷面（两页），卷面底部印有页码，按页码阅读即可。"
 
 # 3) 本地预览
-node tools/serve.mjs dist 5173     # 打开 http://127.0.0.1:5173
+node tools/serve.mjs docs 5173     # 打开 http://127.0.0.1:5173
 ```
 
 `--second` 决定第二把钥匙：
@@ -57,16 +57,44 @@ node tools/serve.mjs dist 5173     # 打开 http://127.0.0.1:5173
 | `phone4` | 学号 + 手机后 4 位 | 明显更好，但名单里得先有手机号 |
 | `none` | 只要学号 | 最省事，几乎等于没有保护 |
 
-## 部署
+## 发到 GitHub Pages
 
-`dist/` 是一个纯静态站点（约 21 MB，20 个密文文件，一人一个），丢到任何静态托管都能用：
+本地仓库已经初始化并提交好了（分支 `main`，发布目录 `docs/`），只差推到 GitHub。
 
-- **GitHub Pages**：仓库里只放 `dist/` 的内容（含 `.nojekyll`），Settings → Pages 选分支根目录。
-- **Vercel / Netlify**：直接把 `dist` 拖进去。
-- **校内 / 自己的服务器**：把 `dist` 放到任意静态目录，注意 MIME：`.bin` 用 `application/octet-stream`，
-  `.mjs` 必须是 `text/javascript`（服务器按扩展名给默认值一般就对）。
+1. 打开 <https://github.com/new> 新建仓库，例如 `midterm-papers`。
+   **不要**勾选 Add a README / .gitignore / license，本地已经有了。
+   免费账号的 Pages 需要仓库是 **Public**；本仓库里只有密文，公开不会泄露卷面，但仓库名和文件数可见。
+2. 接上远端并推送（把 `YOUR-NAME` 换成你的 GitHub 用户名）：
 
-不要部署：`roster.csv`、`试卷_摆正/`、`src/`、`tools/`。只有 `dist/` 是对外的。
+   ```powershell
+   cd C:\Users\enolo\Documents\deepseek-harness\default-workspace\exam-drop
+   git remote add origin https://github.com/YOUR-NAME/midterm-papers.git
+   git push -u origin main
+   ```
+
+   第一次推送会要求登录：弹窗走浏览器授权最省事；或者用 Personal Access Token 当密码。
+3. 仓库 **Settings → Pages**：Source 选 **Deploy from a branch**，
+   Branch 选 **main**，目录选 **/docs**，Save。
+4. 等 1 分钟左右，地址就是 `https://YOUR-NAME.github.io/midterm-papers/`。
+   自己先打开确认：输学号 + 姓名 → 出现自己的 3 张卷子。
+
+已经提交的内容：`docs/`（页面 + 20 个密文）、`src/`、`tools/`、`test/`、`README`、`package.json`。
+`roster.csv`、`试卷_摆正/`、`dist/` 都在 `.gitignore` 里，不会上传。
+
+以后换试卷或改参数：
+
+```powershell
+python tools/prepare_pages.py --source "C:\Users\enolo\Desktop\期中考试" --out 试卷_摆正 --max-width 2600 --quality 82
+node src/build.mjs --source 试卷_摆正 --roster roster.csv --out docs --second name --order name --title "创新班期中试卷领取"
+git add -A; git commit -m "update papers"; git push
+```
+
+> 每次 rebuild 都会换新 pepper 和随机盐，所以 20 个密文文件名全变、内容全变，提交会显示 20 个删除 + 20 个新增。正常现象。
+
+其他托管方式：Vercel / Netlify 把 `docs` 目录拖进去；校内静态空间同理，
+注意 `.bin` 用 `application/octet-stream`、`.js` 用 `text/javascript`（页面脚本已统一输出 `.js`，不用 `.mjs`）。
+
+不要部署：`roster.csv`、`试卷_摆正/`。`docs/` 里只有密文。
 
 发给学生一句话：
 
@@ -93,11 +121,11 @@ node tools/serve.mjs dist 5173     # 打开 http://127.0.0.1:5173
 - **某学生说领不到**：
 
   ```powershell
-  node src/check.mjs --dist dist --sid 2026C001 --factor 张倚晗
+  node src/check.mjs --dist docs --sid 2026C001 --factor 张倚晗
   # 解密成功 → 页面应当能领；未找到 → 学号/姓名与名单不一致
   ```
 
-- **确认发出去的是原件**：`node tools/verify_one.mjs --dist dist --source "试卷_摆正\张倚晗" --sid 2026C001 --factor 张倚晗`
+- **确认发出去的是原件**：`node tools/verify_one.mjs --dist docs --source "试卷_摆正\张倚晗" --sid 2026C001 --factor 张倚晗`
   （哈希逐张比对；注意用 `试卷_摆正`，不是原始照片目录，因为重新编码过）。
 - **名单和文件夹名字有错别字**：build 会在同姓、同长度、只差一个字且候选唯一时自动配对，
   并在「需要注意」里点名提示；配对成功的会**同时生成两个入口**（同一份内容，按两种写法各加密一次），
@@ -111,6 +139,6 @@ node tools/serve.mjs dist 5173     # 打开 http://127.0.0.1:5173
 
 ## 数据卫生
 
-- `roster.csv` 里有成绩；`试卷_摆正/` 是明文扫描件；`dist/data/` 是密文。
+- `roster.csv` 里有成绩；`试卷_摆正/` 是明文扫描件；`docs/data/` 是密文。
 - 这三者都别进公开仓库。要备份就放在本机或私有位置。
 - 授权/令牌类信息本方案完全不需要：不连网盘、不连第三方。
