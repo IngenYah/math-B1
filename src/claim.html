@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>期中试卷领取</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #14161a;
+    --muted: #5f6672;
+    --line: #e3e6ea;
+    --accent: #2f5fe0;
+    --accent-ink: #ffffff;
+    --danger: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101215;
+      --card: #191c21;
+      --ink: #f2f4f7;
+      --muted: #9aa3af;
+      --line: #2a2f36;
+      --accent: #5b83f0;
+      --accent-ink: #0b0d10;
+      --danger: #ff8a80;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    padding: 24px 16px 40px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100%;
+  }
+  .card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px 22px 20px;
+    box-shadow: 0 12px 32px rgb(15 23 42 / 6%);
+  }
+  .eyebrow { margin: 0 0 6px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  h1 { margin: 0; font-size: 24px; line-height: 1.3; letter-spacing: -.01em; }
+  .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+  form { margin-top: 22px; }
+  .field { display: block; margin-bottom: 14px; }
+  .field > span { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  input {
+    width: 100%; padding: 12px 14px; font-size: 16px; color: var(--ink);
+    background: transparent; border: 1px solid var(--line); border-radius: 10px; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  button {
+    width: 100%; margin-top: 4px; padding: 13px 16px; font-size: 16px; font-weight: 600;
+    color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 10px; cursor: pointer;
+    transition: opacity .15s;
+  }
+  button:hover:not(:disabled) { opacity: .9; }
+  button:disabled { opacity: .55; cursor: progress; }
+  button.secondary {
+    margin-top: 18px; color: var(--accent); background: transparent;
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  .status { min-height: 1.4em; margin: 12px 0 0; font-size: 14px; color: var(--muted); }
+  .status.error { color: var(--danger); }
+  .result { margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .who { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .who strong { font-size: 18px; }
+  .who span { font-size: 13px; color: var(--muted); }
+  .pages { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .page { margin: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; cursor: zoom-in; }
+  .page img { display: block; width: 100%; height: auto; }
+  .page figcaption { padding: 6px 10px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+  .page a { display: block; padding: 18px 10px; text-align: center; font-size: 14px; }
+  footer { margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+  .fineprint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); opacity: .85; }
+  .viewer {
+    position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+    padding: 16px; background: rgb(0 0 0 / 88%); cursor: zoom-out;
+  }
+  .viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<main class="card">
+  <header>
+    <p class="eyebrow" id="eyebrow">期中试卷</p>
+    <h1 id="title">领取你的期中试卷</h1>
+    <p class="subtitle" id="subtitle"></p>
+  </header>
+
+  <form id="form" hidden novalidate>
+    <label class="field">
+      <span>学号</span>
+      <input id="sid" name="sid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="请输入本人学号" required>
+    </label>
+    <label class="field" id="factor-wrap" hidden>
+      <span id="factor-label">姓名</span>
+      <input id="factor" name="factor" autocomplete="off" autocapitalize="off" spellcheck="false">
+    </label>
+    <button id="submit" type="submit">查看我的试卷</button>
+    <p class="status" id="status" role="status" aria-live="polite">正在加载…</p>
+  </form>
+
+  <section class="result" id="result" hidden>
+    <div class="who">
+      <strong id="who-name"></strong>
+      <span id="who-meta"></span>
+    </div>
+    <div class="pages" id="pages"></div>
+    <button id="zip" class="secondary" type="button">打包下载</button>
+  </section>
+
+  <footer>
+    <p class="note" id="note"></p>
+    <p class="fineprint">试卷按学号加密存放，只有学号与本人在册信息都对得上才能打开。请勿转发本页地址。</p>
+    <noscript><p class="status error">需要启用 JavaScript 才能领取。</p></noscript>
+  </footer>
+</main>
+
+<div class="viewer" id="viewer" hidden><img id="viewer-img" alt="试卷页面"></div>
+<script type="module" src="./claim.js"></script>
+</body>
+</html>

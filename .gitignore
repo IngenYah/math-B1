@@ -1,0 +1,10 @@
+# 本地数据，绝对不能提交
+试卷_摆正/
+roster.csv
+dist/
+tmp*/
+*.zip
+
+# 系统垃圾
+.DS_Store
+Thumbs.db

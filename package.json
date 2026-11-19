@@ -1,0 +1,21 @@
+﻿{
+  "name": "exam-drop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "按学号加密分发的静态领取站：每个学生用自己的学号解开自己的扫描件",
+  "scripts": {
+    "roster": "python tools/xlsx_to_csv.py",
+    "prepare": "python tools/prepare_pages.py",
+    "build": "node src/build.mjs",
+    "serve": "node tools/serve.mjs docs 5173",
+    "check": "node src/check.mjs",
+    "verify": "node tools/verify_one.mjs",
+    "extract": "node tools/extract.mjs",
+    "page-check": "node tools/check_page.mjs",
+    "test": "node test/exam-drop.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
